@@ -1,26 +1,25 @@
 # Natively Multimodal Tubelet Stack
 
-Zero-Python sovereign pipeline.
+Zero-Python sovereign pipeline. All source files licensed under **AGPLv3** (see [LICENSE](LICENSE)).
 
 ## Planes
 
-- **Verification**: Agda (`agda/TubeletProjection.agda`) — dependent-type invariants, freehand, no external imports.
-- **Lemmas**: Lean 4 + Lake (`lean/`) — same invariants as theorems, zero `sorry`.
-- **Host / orchestration**: Dylan (`dylan/`).
-- **Metal kernels**: CUDA / CUDA-Q style (`cuda/`) lowering tubelets and attention to PTX.
-- **Abstraction + training CLI**: C# (`csharp/`) — renders visuals and drives the pipeline.
+- **Verification**: Agda (`agda/TubeletProjection.agda`) — dependent-type proofs of tensor dimensions (`totalElements`), positional injectivity, and softmax stochasticity. Freehand, Builtin only.
+- **Lemmas**: Lean 4 + Lake (`lean/`) — same invariants as closed theorems (zero `sorry`, no Mathlib). `lake build`.
+- **Host / multi-agent orchestration**: Dylan (`dylan/host.dylan`) and C# (`csharp/Program.cs`).
+- **Metal**: CUDA-Q style kernels (`cuda/tubelet_kernel.cu`) that lower the proven attention matrix and tubelets directly toward PTX.
 
 ## Build
 
 ```bash
-# Lean
+# Lean lemmas
 cd lean && lake build
 
-# C# CLI
+# C# multi-agent CLI + visual render
 dotnet run --project csharp -- --render
 
-# CUDA (requires nvcc / CUDA-Q toolchain)
+# CUDA-Q / nvcc kernels
 nvcc -o tubelet cuda/tubelet_kernel.cu
 ```
 
-No Python. No external package imports in the formal layers.
+Agda/Lean prove the geometry. Dylan or C# orchestrates the agents. CUDA-Q compiles the actual attention matrix.
