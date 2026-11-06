@@ -4,20 +4,31 @@ Zero-Python sovereign pipeline. All source files licensed under **AGPLv3** (see 
 
 ## Planes
 
-- **Verification**: Agda (`agda/TubeletProjection.agda`) — dependent-type proofs of tensor dimensions (`totalElements`), positional injectivity, and softmax stochasticity. Freehand, Builtin only.
-- **Lemmas**: Lean 4 + Lake (`lean/`) — same invariants as closed theorems (zero `sorry`, no Mathlib). `lake build`.
-- **Host / multi-agent orchestration**: Dylan (`dylan/host.dylan`) and C# (`csharp/Program.cs` + full `NativeMetal.cs` FFI).
-- **Metal**: Full zero-copy CUDA kernels (`cuda/tubelet_kernel.cu`) using `cudaHostRegister` / UVA so the RTX streams mmap'd pages directly. C-ABI exports `launch_tubelet_projection`.
-- **Zero-copy ingestion**: C (`c/nvme_mmap.c`) maps NVMe frames via POSIX `mmap`; C# passes the raw `IntPtr`.
-- **Topology extraction**: Dylan (`tools/TopologyParser.dylan`) reads GGUF metadata and emits Lean/Agda constants.
+**Verification plane** (geometry only — no metal):
+- **ATS first** (`ats/tubelet_geometry.dats`) — dependent indices for dimensionality conservation, positional injectivity, and stochasticity. Type-checked before anything else.
+- Agda (`agda/TubeletProjection.agda`) — dependent-type proofs of tensor dimensions, positional injectivity, and softmax stochasticity.
+- Lean 4 + Lake (`lean/`) — same invariants as closed theorems (zero `sorry`).
+
+**Execution plane** (host + metal):
+- Zero-copy C (`c/nvme_mmap.c`) — POSIX `mmap` of NVMe frames.
+- CUDA kernels (`cuda/tubelet_kernel.cu`) — `cudaHostRegister` / UVA, C-ABI `launch_tubelet_projection`.
+- C# host (`csharp/Program.cs` + `NativeMetal.cs`) — raw `IntPtr` FFI, hard gate in CI.
+- Dylan host (`dylan/host.dylan`) and topology extractor (`tools/TopologyParser.dylan`).
 
 ## Proof-Before-Compile
 
-The CI workflow `.github/workflows/sovereign-proof-chain.yml` enforces Agda → Lean → CUDA/C#.
+CI (`.github/workflows/sovereign-proof-chain.yml`) enforces:
+
+1. ATS file present and non-empty (verification plane first)
+2. Agda / Lean (attempted)
+3. Only then C mmap → CUDA → C# hard build
 
 ## Build
 
 ```bash
+# ATS (when patscc is available)
+patscc -tcats ats/tubelet_geometry.dats
+
 # Lean lemmas
 cd lean && lake build
 
@@ -31,4 +42,4 @@ gcc -shared -fPIC -o nvme_mmap.so c/nvme_mmap.c
 cd csharp && dotnet build MultimodalHost.csproj -c Release
 ```
 
-Agda/Lean prove the geometry. The C# bridge passes raw mmap pointers. CUDA pins them with `cudaHostRegister` and executes on the SMs with zero intermediate copies.
+ATS/Agda/Lean prove the geometry. The C# bridge passes raw mmap pointers. CUDA pins them with `cudaHostRegister` and executes on the SMs with zero intermediate copies.
