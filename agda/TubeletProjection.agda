@@ -60,7 +60,7 @@ cong₂ f refl refl = refl
 
 record Tensor4D (T H W C : Nat) : Set where
   constructor tensor4d
-  field data : Vec (Vec (Vec (Vec Float C) W) H) T
+  field contents : Vec (Vec (Vec (Vec Float C) W) H) T
 
 TubeletVector : Nat → Nat → Nat → Set
 TubeletVector t p C = Vec Float (t * p * p * C)
