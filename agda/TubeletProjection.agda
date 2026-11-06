@@ -54,27 +54,9 @@ cong₂ : {A B C : Set} {x1 y1 : A} {x2 y2 : B}
       (f : A → B → C) → x1 ≡ y1 → x2 ≡ y2 → f x1 x2 ≡ f y1 y2
 cong₂ f refl refl = refl
 
--- Integer division (freehand, for the geometry)
-_÷_ : Nat → Nat → Nat
-m ÷ 0 = 0
-m ÷ suc n = div-helper 0 m (suc n)
-  where
-    div-helper : Nat → Nat → Nat → Nat
-    div-helper q 0 _ = q
-    div-helper q (suc m) d with suc m < d
-    ... | true  = q
-    ... | false = div-helper (suc q) (suc m - d) d
-
-    _<_ : Nat → Nat → Bool
-    zero < zero = false
-    zero < suc _ = true
-    suc _ < zero = false
-    suc m < suc n = m < n
-
-    _-_ : Nat → Nat → Nat
-    m - 0 = m
-    0 - suc _ = 0
-    suc m - suc n = m - n
+-- Division is postulated; the Divisibility record carries the exact equality
+postulate
+  _÷_ : Nat → Nat → Nat
 
 -- ============================================================================
 -- Core geometry — proven tensor dimensions
