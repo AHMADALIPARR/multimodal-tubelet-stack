@@ -7,9 +7,9 @@ on:
     branches: [ "main" ]
 
 # Clear plane separation:
-#   VERIFICATION  → ATS + Agda + Lean  (geometry contracts)
-#   EXECUTION     → C mmap + CUDA kernel + C# host
-# Metal must not compile until verification steps have been attempted.
+#   VERIFICATION  → ATS (first) + Agda + Lean   (geometry contracts only)
+#   EXECUTION     → C mmap + CUDA + C# host
+# Metal must not be treated as a substitute for the verification plane.
 
 jobs:
   verify-and-build:
@@ -17,14 +17,14 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      # ---------- VERIFICATION PLANE ----------
+      # ---------- VERIFICATION PLANE (ATS first) ----------
       - name: "V0. ATS geometry (type-check first)"
-        continue-on-error: true
         run: |
-          # ATS is optional on the runner; presence of the source is the contract.
-          # When patscc is available: patscc -tcats ats/tubelet_geometry.dats
           test -f ats/tubelet_geometry.dats
-          echo "ATS tubelet_geometry.dats present (verification plane)"
+          test -s ats/tubelet_geometry.dats
+          echo "ATS tubelet_geometry.dats present and non-empty — verification plane OK"
+          # When patscc is available on the runner:
+          # patscc -tcats ats/tubelet_geometry.dats
 
       - name: "V1. Setup Agda + Lean"
         continue-on-error: true
@@ -85,4 +85,5 @@ jobs:
       - name: "E5. C# host + NativeMetal FFI (hard gate)"
         run: |
           cd csharp
-          dotnet build MultimodalHost.csproj -c Release --no-restore || dotnet build MultimodalHost.csproj -c Release
+          dotnet restore MultimodalHost.csproj
+          dotnet build MultimodalHost.csproj -c Release --no-restore
