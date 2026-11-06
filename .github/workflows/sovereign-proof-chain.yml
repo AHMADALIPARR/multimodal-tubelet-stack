@@ -6,85 +6,36 @@ on:
   pull_request:
     branches: [ "main" ]
 
-# Clear plane separation:
-#   VERIFICATION  → ATS (first) + Agda + Lean   (geometry contracts only)
-#   EXECUTION     → C mmap + CUDA + C# host
-# Metal must not be treated as a substitute for the verification plane.
+# Only steps that actually run:
+#   1. ATS type-check (patscc -tcats) — hard first gate
+#   2. C zero-copy layer compile
+#   3. C# host build
+# No continue-on-error. No optional toolchains. No presence checks.
 
 jobs:
   verify-and-build:
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
 
-      # ---------- VERIFICATION PLANE (ATS first) ----------
-      - name: "V0. ATS geometry (type-check first)"
-        run: |
-          test -f ats/tubelet_geometry.dats
-          test -s ats/tubelet_geometry.dats
-          echo "ATS tubelet_geometry.dats present and non-empty — verification plane OK"
-          # When patscc is available on the runner:
-          # patscc -tcats ats/tubelet_geometry.dats
-
-      - name: "V1. Setup Agda + Lean"
-        timeout-minutes: 10
-        continue-on-error: true
+      - name: "Install ATS and type-check geometry"
         run: |
           sudo apt-get update -qq
-          sudo apt-get install -y -qq agda || true
-          curl -sSf https://raw.githubusercontent.com/leanprover/elan/master/elan-init.sh | sh -s -- -y || true
-          echo "$HOME/.elan/bin" >> $GITHUB_PATH
+          sudo apt-get install -y -qq ats2-lang
+          patscc -tcats ats/tubelet_geometry.dats
 
-      - name: "V2. Agda tensor geometry"
-        run: |
-          if command -v agda >/dev/null 2>&1; then
-            agda --safe agda/TubeletProjection.agda
-          else
-            echo "agda not installed; source must still type-check offline"
-            exit 0
-          fi
-
-      - name: "V3. Lean lemmas (lake build)"
-        working-directory: ./lean
-        run: |
-          export PATH="$HOME/.elan/bin:$PATH"
-          if command -v lake >/dev/null 2>&1; then
-            lake build
-          else
-            echo "lake not installed; lemmas must still build offline"
-            exit 0
-          fi
-
-      # ---------- EXECUTION PLANE ----------
-      - name: "E1. Zero-copy C hypervisor"
+      - name: "Compile zero-copy C layer"
         run: |
           mkdir -p bin
           gcc -shared -fPIC -o bin/nvme_mmap.so c/nvme_mmap.c -O3
 
-      - name: "E2. CUDA metal (optional toolkit)"
-        continue-on-error: true
-        uses: Jimver/cuda-toolkit@v0.2.11
-        with:
-          cuda: '12.6.0'
-          method: network
-
-      - name: "E3. Compile CUDA kernel"
-        continue-on-error: true
-        run: |
-          mkdir -p bin
-          if command -v nvcc >/dev/null 2>&1; then
-            nvcc -Xcompiler -fPIC -shared -o bin/tubelet_kernel.so cuda/tubelet_kernel.cu -O3
-          else
-            echo "nvcc unavailable on runner; kernel source is the contract"
-          fi
-
-      - name: "E4. Setup .NET"
+      - name: "Setup .NET"
         uses: actions/setup-dotnet@v4
         with:
           dotnet-version: '8.0.x'
 
-      - name: "E5. C# host + NativeMetal FFI (hard gate)"
+      - name: "Build C# host"
         run: |
           cd csharp
           dotnet restore MultimodalHost.csproj
