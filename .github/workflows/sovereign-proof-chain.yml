@@ -14,6 +14,7 @@ on:
 jobs:
   verify-and-build:
     runs-on: ubuntu-latest
+    timeout-minutes: 20
     steps:
       - uses: actions/checkout@v4
 
@@ -27,6 +28,7 @@ jobs:
           # patscc -tcats ats/tubelet_geometry.dats
 
       - name: "V1. Setup Agda + Lean"
+        timeout-minutes: 10
         continue-on-error: true
         run: |
           sudo apt-get update -qq
@@ -35,16 +37,15 @@ jobs:
           echo "$HOME/.elan/bin" >> $GITHUB_PATH
 
       - name: "V2. Agda tensor geometry"
-        continue-on-error: true
         run: |
           if command -v agda >/dev/null 2>&1; then
             agda --safe agda/TubeletProjection.agda
           else
             echo "agda not installed; source must still type-check offline"
+            exit 0
           fi
 
       - name: "V3. Lean lemmas (lake build)"
-        continue-on-error: true
         working-directory: ./lean
         run: |
           export PATH="$HOME/.elan/bin:$PATH"
@@ -52,6 +53,7 @@ jobs:
             lake build
           else
             echo "lake not installed; lemmas must still build offline"
+            exit 0
           fi
 
       # ---------- EXECUTION PLANE ----------
