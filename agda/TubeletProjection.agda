@@ -54,6 +54,28 @@ cong₂ : {A B C : Set} {x1 y1 : A} {x2 y2 : B}
       (f : A → B → C) → x1 ≡ y1 → x2 ≡ y2 → f x1 x2 ≡ f y1 y2
 cong₂ f refl refl = refl
 
+-- Integer division (freehand, for the geometry)
+_÷_ : Nat → Nat → Nat
+m ÷ 0 = 0
+m ÷ suc n = div-helper 0 m (suc n)
+  where
+    div-helper : Nat → Nat → Nat → Nat
+    div-helper q 0 _ = q
+    div-helper q (suc m) d with suc m < d
+    ... | true  = q
+    ... | false = div-helper (suc q) (suc m - d) d
+
+    _<_ : Nat → Nat → Bool
+    zero < zero = false
+    zero < suc _ = true
+    suc _ < zero = false
+    suc m < suc n = m < n
+
+    _-_ : Nat → Nat → Nat
+    m - 0 = m
+    0 - suc _ = 0
+    suc m - suc n = m - n
+
 -- ============================================================================
 -- Core geometry — proven tensor dimensions
 -- ============================================================================
@@ -66,14 +88,14 @@ TubeletVector : Nat → Nat → Nat → Set
 TubeletVector t p C = Vec Float (t * p * p * C)
 
 Nv : Nat → Nat → Nat → Nat → Nat → Nat
-Nv T H W t p = (T / t) * (H / p) * (W / p)
+Nv T H W t p = (T ÷ t) * (H ÷ p) * (W ÷ p)
 
 record Divisibility (T H W t p : Nat) : Set where
   constructor divisibility
   field
-    modT : T ≡ t * (T / t)
-    modH : H ≡ p * (H / p)
-    modW : W ≡ p * (W / p)
+    modT : T ≡ t * (T ÷ t)
+    modH : H ≡ p * (H ÷ p)
+    modW : W ≡ p * (W ÷ p)
 
 -- Invariant 1: Dimensionality conservation (isometry of the slice)
 -- The type itself forces the output length to equal Nv.
