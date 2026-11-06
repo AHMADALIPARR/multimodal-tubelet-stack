@@ -1,5 +1,10 @@
 # Natively Multimodal Tubelet Stack
 
+[![License: AGPL v3](https://img.shields.io/badge/License-AGPL%20v3-blue.svg)](https://www.gnu.org/licenses/agpl-3.0)
+[![CI](https://github.com/AHMADALIPARR/multimodal-tubelet-stack/actions/workflows/sovereign-proof-chain.yml/badge.svg)](https://github.com/AHMADALIPARR/multimodal-tubelet-stack/actions/workflows/sovereign-proof-chain.yml)
+[![Zero-Python](https://img.shields.io/badge/Python-none-success.svg)](https://github.com/AHMADALIPARR/multimodal-tubelet-stack)
+[![Proof-Before-Compile](https://img.shields.io/badge/Verification-ATS%20%2B%20Agda%20%2B%20Lean-informational.svg)](https://github.com/AHMADALIPARR/multimodal-tubelet-stack)
+
 Zero-Python sovereign pipeline for verified spatiotemporal tensor geometry and zero-copy GPU execution. All source files are licensed under the **GNU Affero General Public License v3** (see [LICENSE](LICENSE)).
 
 This repository implements a **proof-before-compile** architecture in which the algebraic geometry of multimodal tubelet projection is formally constrained in dependent type systems before any host or metal code is allowed to build. The design deliberately separates a pure verification plane from an execution plane so that dimensional invariants, positional injectivity, and stochasticity contracts cannot be violated by runtime implementation details.
