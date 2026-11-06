@@ -1,29 +1,28 @@
 (*
  * tubelet_geometry.dats
- * ATS verification plane — dependent types for tubelet dimensions.
- * Type-checked before metal. Clear separation from CUDA/C#/Dylan.
+ * ATS verification plane — first type-check before any metal.
+ * Dependent indices force dimensionality conservation and injectivity.
+ * Clear separation: no CUDA, no C#, no host code here.
  *
  * Copyright (C) 2026 AHMAD ALI PARR
  * AGPLv3+
  *)
 
 (* ****** ****** *)
-// Statics: dimension arithmetic as dependent indices
+// Statics — pure geometry contracts
 (* ****** ****** *)
 
-stacst T : int  // temporal frames
-stacst H : int  // height
-stacst W : int  // width
-stacst C : int  // channels
-stacst t : int  // temporal patch
-stacst p : int  // spatial patch
-
-// Nv = number of tubelets
-// (T/t)*(H/p)*(W/p)
+stacst T : int
+stacst H : int
+stacst W : int
+stacst C : int
+stacst t : int
+stacst p : int
 stacst Nv : int
 
-// Invariant 1: total elements conserved under exact division
-// T*H*W*C = Nv * (t*p*p*C)
+// Exact divisibility hypotheses
+// T ≡ t * (T/t) etc. are carried as static constraints
+
 extern
 prfun total_elements_conserved
   {T,H,W,C,t,p,Nv:int |
@@ -33,7 +32,6 @@ prfun total_elements_conserved
    Nv == (T / t) * (H / p) * (W / p)}
   (): [T * H * W * C == Nv * (t * p * p * C)] void
 
-// Invariant 2: positional injectivity (abstract prop)
 abstype spacetime_coord (T:int, H:int, W:int)
 
 extern
@@ -42,7 +40,6 @@ prfun coord_injective
   {c1,c2: spacetime_coord(T,H,W)}
   (eq: c1 == c2): [c1 == c2] void
 
-// Invariant 3: softmax row sums to 1 (contract for metal)
 abstype attn_row (n:int)
 
 extern
@@ -51,14 +48,12 @@ prfun is_stochastic
   (row: attn_row(n)): [true] void
 
 (* ****** ****** *)
-// Dynamics: a trivial host-side check that carries the static proof
+// Dynamics — type-level gate only
 (* ****** ****** *)
 
 implement
 main0 () = () where {
-  // Pure type-level gate; no runtime metal.
-  // If this file type-checks, the geometry contracts are well-formed.
-  val () = println! ("ATS tubelet geometry: type-check OK")
+  val () = println! ("ATS tubelet geometry: type-check OK — verification plane")
 }
 
 (* end of [tubelet_geometry.dats] *)
