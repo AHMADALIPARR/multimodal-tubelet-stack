@@ -20,7 +20,7 @@
   along with this program.  If not, see <https://www.gnu.org/licenses/>.
 -}
 
-module TubeletProjection where
+module agda.TubeletProjection where
 
 open import Agda.Builtin.Nat
 open import Agda.Builtin.Equality
